@@ -7,6 +7,13 @@ import os
 from typing import Optional
 import requests
 
+# Try to import streamlit for secrets support
+try:
+    import streamlit as st
+    STREAMLIT_AVAILABLE = True
+except ImportError:
+    STREAMLIT_AVAILABLE = False
+
 
 class AIProvider:
     """Abstract AI provider supporting multiple services."""
@@ -17,14 +24,14 @@ class AIProvider:
         
         Args:
             provider: AI provider name ('openai', 'claude', 'perplexity', 'mistral')
-                     If None, uses DEFAULT_AI_PROVIDER from .env
+                     If None, uses DEFAULT_AI_PROVIDER from .env or Streamlit secrets
         """
-        self.provider = provider or os.getenv('DEFAULT_AI_PROVIDER', 'openai')
+        self.provider = provider or self._get_config('DEFAULT_AI_PROVIDER', 'openai')
         self.api_keys = {
-            'openai': os.getenv('OPENAI_API_KEY'),
-            'claude': os.getenv('CLAUDE_API_KEY'),
-            'perplexity': os.getenv('PERPLEXITY_API_KEY'),
-            'mistral': os.getenv('MISTRAL_API_KEY')
+            'openai': self._get_config('OPENAI_API_KEY'),
+            'claude': self._get_config('CLAUDE_API_KEY'),
+            'perplexity': self._get_config('PERPLEXITY_API_KEY'),
+            'mistral': self._get_config('MISTRAL_API_KEY')
         }
         
         if not self.api_keys.get(self.provider):
@@ -133,15 +140,32 @@ class AIProvider:
         return response.json()['choices'][0]['message']['content']
     
     @staticmethod
+    def _get_config(key: str, default: str = None) -> Optional[str]:
+        """Get configuration from environment or Streamlit secrets."""
+        # Try environment variable first
+        value = os.getenv(key)
+        if value:
+            return value
+        
+        # Try Streamlit secrets if available
+        if STREAMLIT_AVAILABLE:
+            try:
+                return st.secrets.get(key, default)
+            except (FileNotFoundError, KeyError):
+                pass
+        
+        return default
+    
+    @staticmethod
     def list_available_providers() -> list:
         """List all AI providers that have API keys configured."""
         providers = []
-        if os.getenv('OPENAI_API_KEY'):
+        if AIProvider._get_config('OPENAI_API_KEY'):
             providers.append('openai')
-        if os.getenv('CLAUDE_API_KEY'):
+        if AIProvider._get_config('CLAUDE_API_KEY'):
             providers.append('claude')
-        if os.getenv('PERPLEXITY_API_KEY'):
+        if AIProvider._get_config('PERPLEXITY_API_KEY'):
             providers.append('perplexity')
-        if os.getenv('MISTRAL_API_KEY'):
+        if AIProvider._get_config('MISTRAL_API_KEY'):
             providers.append('mistral')
         return providers

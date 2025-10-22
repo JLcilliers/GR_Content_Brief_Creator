@@ -1,11 +1,12 @@
 # Content Brief Creator
 
-An AI-powered content brief generation system that creates consistent, professionally-formatted content briefs by pulling from customizable client profiles.
+An AI-powered content brief generation system that creates consistent, professionally-formatted content briefs by pulling from customizable client profiles. Supports multiple AI providers including OpenAI, Claude, Perplexity, and Mistral for flexibility and reliability.
 
 ## Features
 
 - **Client Profile Management**: Store and manage client-specific information, restrictions, and requirements
-- **AI-Powered Brief Generation**: Automatically generates comprehensive 12-section content briefs using OpenAI GPT-4o
+- **Multi-AI Provider Support**: Choose between OpenAI GPT-4o, Claude 3.5 Sonnet, Perplexity Sonar, or Mistral Large for brief generation
+- **AI-Powered Brief Generation**: Automatically generates comprehensive 12-section content briefs
 - **Consistent Formatting**: Every brief follows the same structure with Poppins font styling and professional formatting
 - **Word Document Output**: Creates properly formatted .docx files ready for immediate use
 
@@ -39,11 +40,18 @@ Each generated brief includes:
    pip install -r requirements.txt
    ```
 
-3. **Set up your OpenAI API key**:
+3. **Set up your AI provider API keys**:
    - Copy `.env.example` to `.env`
-   - Add your OpenAI API key:
+   - Add at least one AI provider API key:
      ```
-     OPENAI_API_KEY=your_api_key_here
+     # Choose one or more providers
+     OPENAI_API_KEY=your_openai_api_key_here
+     CLAUDE_API_KEY=your_claude_api_key_here
+     PERPLEXITY_API_KEY=your_perplexity_api_key_here
+     MISTRAL_API_KEY=your_mistral_api_key_here
+     
+     # Set default provider (optional)
+     DEFAULT_AI_PROVIDER=openai
      ```
 
 ## Usage
@@ -57,13 +65,18 @@ python main.py
 ### Creating a Content Brief
 
 1. Select **"Create Brief"** from the main menu
-2. Choose a client from the list
-3. Enter the content topic
-4. Provide primary keyword
-5. Add secondary keywords (comma-separated)
-6. The system will:
+2. **Choose an AI provider** from the available options:
+   - OpenAI GPT-4o
+   - Claude 3.5 Sonnet
+   - Perplexity Sonar Large
+   - Mistral Large
+3. Choose a client from the list
+4. Enter the content topic
+5. Provide primary keyword
+6. Add secondary keywords (comma-separated)
+7. The system will:
    - Pull client profile data automatically
-   - Generate all 12 brief sections using AI
+   - Generate all 12 brief sections using your selected AI provider
    - Create a formatted Word document in `output_briefs/`
 
 ### Managing Clients
@@ -159,10 +172,12 @@ All briefs follow "Absolute Mode" principles:
 Content Brief Creator/
 ├── main.py                 # Main CLI interface
 ├── brief_generator.py      # AI brief generation logic
+├── ai_provider.py          # AI provider abstraction layer
 ├── client_manager.py       # Client CRUD operations
 ├── document_formatter.py   # Word document creation
 ├── requirements.txt        # Python dependencies
 ├── .env.example           # Environment variables template
+├── .env                   # Your API keys (git-ignored)
 ├── .gitignore             # Git ignore rules
 ├── clients/               # Client profile JSON files
 │   └── castle_surveys.json
@@ -172,13 +187,18 @@ Content Brief Creator/
 ## Requirements
 
 - Python 3.8+
-- OpenAI API key
+- At least one AI provider API key:
+  - OpenAI API key (for GPT-4o)
+  - Anthropic API key (for Claude 3.5 Sonnet)
+  - Perplexity API key (for Sonar Large)
+  - Mistral API key (for Mistral Large)
 - Internet connection for API calls
 
 ## Dependencies
 
 - python-docx >= 1.1.0
 - openai >= 1.0.0
+- anthropic >= 0.18.0
 - requests >= 2.31.0
 - python-dotenv >= 1.0.0
 
@@ -189,7 +209,7 @@ Content Brief Creator/
    # Install and configure
    pip install -r requirements.txt
    cp .env.example .env
-   # Add your OpenAI API key to .env
+   # Add at least one AI provider API key to .env
    ```
 
 2. **Create a Client Profile**:
@@ -203,6 +223,7 @@ Content Brief Creator/
    ```bash
    python main.py
    # Select: Create Brief
+   # Select AI provider (OpenAI, Claude, Perplexity, or Mistral)
    # Choose client, enter topic and keywords
    # Wait for AI generation
    # Find output in output_briefs/
@@ -210,17 +231,22 @@ Content Brief Creator/
 
 ## Troubleshooting
 
-**"OpenAI API key not found"**
+**"No AI provider API keys found"**
 - Ensure `.env` file exists in project root
-- Verify `OPENAI_API_KEY=your_key` is set correctly
+- Verify at least one provider API key is set correctly:
+  - `OPENAI_API_KEY=your_key`
+  - `CLAUDE_API_KEY=your_key`
+  - `PERPLEXITY_API_KEY=your_key`
+  - `MISTRAL_API_KEY=your_key`
 
 **"No clients found"**
 - Create a client profile first using the Manage Clients menu
 
 **"Failed to generate brief"**
 - Check your internet connection
-- Verify your OpenAI API key is valid and has credits
-- Check API error message in console
+- Verify your selected AI provider API key is valid and has credits/access
+- Try switching to a different AI provider
+- Check API error message in console for specific details
 
 ## License
 

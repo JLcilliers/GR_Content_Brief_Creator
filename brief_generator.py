@@ -1,25 +1,24 @@
 """
 AI Content Brief Generator
-Generates comprehensive content briefs using OpenAI API.
+Generates comprehensive content briefs using multiple AI providers.
 """
 
-import os
-from typing import Dict, List
-from openai import OpenAI
-from dotenv import load_dotenv
-
-load_dotenv()
+from typing import Dict, List, Optional
+from ai_provider import AIProvider
 
 
 class BriefGenerator:
     """Generates content briefs using AI based on client profiles."""
     
-    def __init__(self):
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise ValueError("OPENAI_API_KEY not found in environment variables")
-        self.client = OpenAI(api_key=api_key)
-        self.model = "gpt-4o"  # Using latest model
+    def __init__(self, provider: Optional[str] = None):
+        """
+        Initialize brief generator with specified AI provider.
+        
+        Args:
+            provider: AI provider name ('openai', 'claude', 'perplexity', 'mistral')
+                     If None, uses DEFAULT_AI_PROVIDER from .env
+        """
+        self.ai_provider = AIProvider(provider)
     
     def generate_brief(
         self,
@@ -119,16 +118,8 @@ class BriefGenerator:
 Use UK English. Use hyphens rather than em-dashes. Write at 8th grade reading level. Simple words only."""
     
     def _call_ai(self, system_instruction: str, user_prompt: str) -> str:
-        """Call OpenAI API with system instruction and user prompt."""
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": system_instruction},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=0.7
-        )
-        return response.choices[0].message.content.strip()
+        """Call AI provider with system instruction and user prompt."""
+        return self.ai_provider.generate(system_instruction, user_prompt, temperature=0.7)
     
     def _generate_page_type(
         self, system_instruction: str, client_data: Dict,

@@ -8,6 +8,7 @@ from typing import List
 from client_manager import ClientManager
 from brief_generator import BriefGenerator
 from document_formatter import DocumentFormatter
+from ai_provider import AIProvider
 
 
 class ContentBriefCreator:
@@ -15,16 +16,16 @@ class ContentBriefCreator:
     
     def __init__(self):
         self.client_manager = ClientManager()
-        try:
-            self.brief_generator = BriefGenerator()
-        except ValueError as e:
-            print(f"Error: {e}")
-            print("\nPlease set up your OpenAI API key:")
-            print("1. Copy .env.example to .env")
-            print("2. Add your OpenAI API key to .env")
-            sys.exit(1)
-        
         self.doc_formatter = DocumentFormatter()
+        
+        # Check for available AI providers
+        available_providers = AIProvider.list_available_providers()
+        if not available_providers:
+            print("Error: No AI provider API keys found.")
+            print("\nPlease set up at least one AI provider API key:")
+            print("1. Copy .env.example to .env")
+            print("2. Add API keys for OpenAI, Claude, Perplexity, or Mistral to .env")
+            sys.exit(1)
     
     def run(self):
         """Run the main application loop."""
@@ -55,6 +56,32 @@ class ContentBriefCreator:
         print("\n" + "-"*60)
         print("Create Content Brief")
         print("-"*60)
+        
+        # Select AI provider
+        available_providers = AIProvider.list_available_providers()
+        print("\nAvailable AI providers:")
+        for idx, provider in enumerate(available_providers, 1):
+            print(f"{idx}. {provider.upper()}")
+        
+        try:
+            provider_idx = int(input("\nSelect AI provider (or press Enter for default): ").strip() or "1") - 1
+            if provider_idx < 0 or provider_idx >= len(available_providers):
+                print("Invalid selection. Using default provider.")
+                selected_provider = available_providers[0]
+            else:
+                selected_provider = available_providers[provider_idx]
+        except ValueError:
+            print("Invalid input. Using default provider.")
+            selected_provider = available_providers[0]
+        
+        print(f"Using AI provider: {selected_provider.upper()}")
+        
+        # Initialize brief generator with selected provider
+        try:
+            brief_generator = BriefGenerator(provider=selected_provider)
+        except ValueError as e:
+            print(f"Error initializing AI provider: {e}")
+            return
         
         # List available clients
         clients = self.client_manager.list_clients()
@@ -108,11 +135,11 @@ class ContentBriefCreator:
         
         # Generate brief
         print("\n" + "="*60)
-        print("Generating content brief...")
+        print(f"Generating content brief with {selected_provider.upper()}...")
         print("="*60)
         
         try:
-            brief_data = self.brief_generator.generate_brief(
+            brief_data = brief_generator.generate_brief(
                 client_data=client_data,
                 topic=topic,
                 primary_kw=primary_kw,

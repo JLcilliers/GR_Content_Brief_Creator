@@ -30,6 +30,7 @@ class AIProvider:
         self.api_keys = {
             'openai': self._get_config('OPENAI_API_KEY'),
             'claude': self._get_config('CLAUDE_API_KEY'),
+            'grok': self._get_config('GROK_API_KEY'),
             'perplexity': self._get_config('PERPLEXITY_API_KEY'),
             'mistral': self._get_config('MISTRAL_API_KEY')
         }
@@ -53,6 +54,8 @@ class AIProvider:
             return self._generate_openai(system_prompt, user_prompt, temperature)
         elif self.provider == 'claude':
             return self._generate_claude(system_prompt, user_prompt, temperature)
+        elif self.provider == 'grok':
+            return self._generate_grok(system_prompt, user_prompt, temperature)
         elif self.provider == 'perplexity':
             return self._generate_perplexity(system_prompt, user_prompt, temperature)
         elif self.provider == 'mistral':
@@ -90,6 +93,30 @@ class AIProvider:
             ]
         )
         return message.content[0].text
+    
+    def _generate_grok(self, system_prompt: str, user_prompt: str, temperature: float) -> str:
+        """Generate using Grok API."""
+        headers = {
+            "Authorization": f"Bearer {self.api_keys['grok']}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "model": "grok-beta",
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            "temperature": temperature
+        }
+        
+        response = requests.post(
+            "https://api.x.ai/v1/chat/completions",
+            json=payload,
+            headers=headers
+        )
+        response.raise_for_status()
+        return response.json()['choices'][0]['message']['content']
     
     def _generate_perplexity(self, system_prompt: str, user_prompt: str, temperature: float) -> str:
         """Generate using Perplexity API."""
@@ -164,6 +191,8 @@ class AIProvider:
             providers.append('openai')
         if AIProvider._get_config('CLAUDE_API_KEY'):
             providers.append('claude')
+        if AIProvider._get_config('GROK_API_KEY'):
+            providers.append('grok')
         if AIProvider._get_config('PERPLEXITY_API_KEY'):
             providers.append('perplexity')
         if AIProvider._get_config('MISTRAL_API_KEY'):

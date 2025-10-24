@@ -1,12 +1,10 @@
-# Environment variables
-.env
-.streamlit/secrets.toml
-
-# Python
+# Python cache
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+
+# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -28,6 +26,7 @@ wheels/
 venv/
 ENV/
 env/
+.venv
 
 # IDE
 .vscode/
@@ -40,7 +39,11 @@ env/
 .DS_Store
 Thumbs.db
 
-# Generated files
-clients/
+# Application specific
+temp_output/
+output_briefs/
 *.docx
-output/
+*.log
+
+# Streamlit
+.streamlit/secrets.toml

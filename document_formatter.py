@@ -6,6 +6,8 @@ Creates formatted Word documents from content brief data.
 from docx import Document
 from docx.shared import Pt, RGBColor, Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx.oxml.shared import OxmlElement
+from docx.oxml.ns import qn
 from typing import Dict
 import os
 from datetime import datetime
@@ -15,9 +17,17 @@ class DocumentFormatter:
     """Formats content briefs into Word documents with consistent styling."""
     
     def __init__(self):
-        self.font_name = "Poppins"
-        self.body_size = 12
-        self.heading_size = 14
+        self.font_name = "Calibri"
+        self.body_size = 11
+        self.heading_size = 12
+        
+        # Professional color scheme
+        self.header_bg = RGBColor(0, 32, 96)  # Dark blue
+        self.header_text = RGBColor(255, 255, 255)  # White
+        self.section_bg = RGBColor(68, 114, 196)  # Medium blue
+        self.section_text = RGBColor(255, 255, 255)  # White
+        self.content_bg = RGBColor(242, 242, 242)  # Light gray
+        self.content_text = RGBColor(0, 0, 0)  # Black
     
     def create_brief_document(self, brief_data: Dict, output_dir: str = "output_briefs") -> str:
         """Create a formatted Word document from brief data."""
@@ -61,55 +71,93 @@ class DocumentFormatter:
         return filepath
     
     def _add_header(self, doc: Document, brief_data: Dict):
-        """Add the header section with client name, topic, site, and keywords."""
+        """Add professional table-based header with client information."""
         
-        # Main title
-        title = f"{brief_data.get('client_name', '')} - {brief_data.get('topic', '')} - Content Brief"
-        p = doc.add_paragraph(title)
-        p.runs[0].font.size = Pt(16)
-        p.runs[0].font.bold = True
-        p.runs[0].font.name = self.font_name
-        p.runs[0].font.color.rgb = RGBColor(0, 51, 102)  # Dark blue
-        p.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+        # Main title with colored background
+        title_table = doc.add_table(rows=1, cols=1)
+        title_table.style = 'Table Grid'
+        title_cell = title_table.rows[0].cells[0]
+        title_cell.text = f"{brief_data.get('client_name', '')} - {brief_data.get('topic', '')} - Content Brief"
         
-        # Site
-        p = doc.add_paragraph(f"Site: {brief_data.get('site', '')}")
-        p.runs[0].font.name = self.font_name
-        p.runs[0].font.size = Pt(self.body_size)
+        # Style title cell
+        title_para = title_cell.paragraphs[0]
+        title_run = title_para.runs[0]
+        title_run.font.name = self.font_name
+        title_run.font.size = Pt(16)
+        title_run.font.bold = True
+        title_run.font.color.rgb = self.header_text
+        title_para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
         
-        # Primary keyword
-        p = doc.add_paragraph(f"Primary keyword: {brief_data.get('primary_kw', '')}")
-        p.runs[0].font.name = self.font_name
-        p.runs[0].font.size = Pt(self.body_size)
+        # Set title cell background color
+        self._set_cell_background(title_cell, self.header_bg)
         
-        # Secondary keywords
-        p = doc.add_paragraph(f"Secondary keywords: {brief_data.get('secondary_kws', '')}")
-        p.runs[0].font.name = self.font_name
-        p.runs[0].font.size = Pt(self.body_size)
+        doc.add_paragraph()  # Spacing
+        
+        # Info table with metadata
+        info_table = doc.add_table(rows=4, cols=2)
+        info_table.style = 'Table Grid'
+        
+        # Set column widths
+        info_table.columns[0].width = Inches(1.5)
+        info_table.columns[1].width = Inches(5.0)
+        
+        # Row 1: Site
+        self._add_info_row(info_table.rows[0], "Site:", brief_data.get('site', ''))
+        
+        # Row 2: Primary Keyword
+        self._add_info_row(info_table.rows[1], "Primary Keyword:", brief_data.get('primary_kw', ''))
+        
+        # Row 3: Secondary Keywords
+        self._add_info_row(info_table.rows[2], "Secondary Keywords:", brief_data.get('secondary_kws', ''))
+        
+        # Row 4: Date Generated
+        self._add_info_row(info_table.rows[3], "Date Generated:", datetime.now().strftime("%d %B %Y"))
         
         # Add spacing
         doc.add_paragraph()
     
     def _add_section(self, doc: Document, section_title: str, content: str):
-        """Add a section with heading and content."""
+        """Add a professional section with table-based layout."""
         
-        # Section heading
-        p = doc.add_paragraph(section_title)
-        p.runs[0].font.size = Pt(self.heading_size)
-        p.runs[0].font.bold = True
-        p.runs[0].font.name = self.font_name
-        p.runs[0].font.color.rgb = RGBColor(51, 102, 153)  # Medium blue
+        # Create section table
+        section_table = doc.add_table(rows=2, cols=1)
+        section_table.style = 'Table Grid'
         
-        # Content
-        # Split content into paragraphs and preserve formatting
+        # Title row with colored background
+        title_cell = section_table.rows[0].cells[0]
+        title_cell.text = section_title
+        
+        # Style title
+        title_para = title_cell.paragraphs[0]
+        title_run = title_para.runs[0]
+        title_run.font.name = self.font_name
+        title_run.font.size = Pt(self.heading_size)
+        title_run.font.bold = True
+        title_run.font.color.rgb = self.section_text
+        
+        # Set title cell background
+        self._set_cell_background(title_cell, self.section_bg)
+        
+        # Content row with light background
+        content_cell = section_table.rows[1].cells[0]
+        
+        # Set content cell background
+        self._set_cell_background(content_cell, self.content_bg)
+        
+        # Add content with proper formatting
+        content_cell.text = ''  # Clear default text
         content_lines = content.split('\n')
-        for line in content_lines:
-            if line.strip():  # Skip empty lines
-                p = doc.add_paragraph(line)
-                p.runs[0].font.name = self.font_name
-                p.runs[0].font.size = Pt(self.body_size)
-            else:
-                doc.add_paragraph()  # Add blank line
+        
+        for i, line in enumerate(content_lines):
+            if i > 0:  # Add paragraph for subsequent lines
+                content_cell.add_paragraph()
+            
+            if line.strip():
+                para = content_cell.paragraphs[-1]
+                run = para.add_run(line)
+                run.font.name = self.font_name
+                run.font.size = Pt(self.body_size)
+                run.font.color.rgb = self.content_text
         
         # Add spacing after section
         doc.add_paragraph()
@@ -125,3 +173,27 @@ class DocumentFormatter:
     def set_heading_size(self, size: int):
         """Change the heading font size."""
         self.heading_size = size
+    
+    def _set_cell_background(self, cell, color: RGBColor):
+        """Set background color for a table cell."""
+        shading_elm = OxmlElement('w:shd')
+        shading_elm.set(qn('w:fill'), '{:02X}{:02X}{:02X}'.format(color.r, color.g, color.b))
+        cell._element.get_or_add_tcPr().append(shading_elm)
+    
+    def _add_info_row(self, row, label: str, value: str):
+        """Add a formatted info row to the header table."""
+        # Label cell
+        label_cell = row.cells[0]
+        label_para = label_cell.paragraphs[0]
+        label_run = label_para.add_run(label)
+        label_run.font.name = self.font_name
+        label_run.font.size = Pt(self.body_size)
+        label_run.font.bold = True
+        self._set_cell_background(label_cell, self.content_bg)
+        
+        # Value cell
+        value_cell = row.cells[1]
+        value_para = value_cell.paragraphs[0]
+        value_run = value_para.add_run(value)
+        value_run.font.name = self.font_name
+        value_run.font.size = Pt(self.body_size)
